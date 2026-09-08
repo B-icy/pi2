@@ -1,19 +1,40 @@
-# Evidence-driven delivery for pi
+# pi2: Evidence-driven delivery
 
-A package for the [pi coding agent](https://github.com/earendil-works/pi-coding-agent) that turns one-prompt software requests into evidence-backed deliveries: acceptance contracts with executable checks, source-freshness fingerprints that invalidate stale evidence, user-owned required validators, bounded repair nudges, a verified Ursina starter for game/graphics tasks, and an opt-in A/B evaluation runner for smaller models. See `docs/workflow.svg` for the delivery flow and `docs/evaluation.md` for the honest live-trial history, failures included.
+A package and CLI for [pi2](https://github.com/B-icy/pi-evidence-driven-delivery) and the [pi coding agent](https://github.com/earendil-works/pi-coding-agent) that turns one-prompt software requests into evidence-backed deliveries: acceptance contracts with executable checks, source-freshness fingerprints that invalidate stale evidence, user-owned required validators, bounded repair nudges, a verified Ursina starter for game/graphics tasks, and an opt-in A/B evaluation runner for smaller models. See `docs/workflow.svg` for the delivery flow and `docs/evaluation.md` for the honest live-trial history, failures included.
+
+## CLI Usage
+
+The package exposes the standalone `pi2` command line interface:
+
+```sh
+# Calculate workspace SHA-256 source freshness fingerprint
+pi2 hash
+
+# Run all declared verification checks
+pi2 check all
+
+# Inspect current plan, fingerprint, and pending status
+pi2 status
+
+# Launch the interactive web dashboard & workflow visualizer
+pi2 serve
+
+# Run test suite
+pi2 test
+```
 
 ## Install
 
-pi installs packages from git:
+Install or run via `pi2`:
 
 ```sh
-pi install git:github.com/B-icy/pi-evidence-driven-delivery
+pi2 install git:github.com/B-icy/pi-evidence-driven-delivery
 ```
 
 Or try it for one run only:
 
 ```sh
-pi -e git:github.com/B-icy/pi-evidence-driven-delivery -p "Build the requested software"
+pi2 -e git:github.com/B-icy/pi-evidence-driven-delivery -p "Build the requested software"
 ```
 
 Tested with pi 0.85.1 / Node 23.9.0. No npm install is needed when loaded by pi: it supplies the declared peer dependencies (`typebox`, `@earendil-works/pi-coding-agent`). Core tests use Node built-ins; extension integration tests also need an installed pi.

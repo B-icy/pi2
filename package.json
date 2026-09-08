@@ -1,10 +1,13 @@
 {
-  "name": "pi-evidence-driven-delivery",
+  "name": "pi2",
   "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "One-prompt software delivery with durable contracts and executable evidence",
-  "keywords": ["pi-package"],
+  "keywords": ["pi2", "pi-package", "evidence-driven-delivery"],
+  "bin": {
+    "pi2": "./bin/pi2.mjs"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/B-icy/pi-evidence-driven-delivery"
@@ -20,5 +23,22 @@
     "@earendil-works/pi-coding-agent": "*",
     "typebox": "*"
   },
-  "scripts": {"test": "node --test tests/*.test.mjs"}
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "typebox": {
+      "optional": true
+    }
+  },
+  "scripts": {
+    "dev": "node server.mjs",
+    "start": "node server.mjs",
+    "pi2": "node bin/pi2.mjs",
+    "build": "node -e \"console.log('Build complete')\"",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
 }

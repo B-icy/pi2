@@ -1,0 +1,6 @@
+{
+  "name": "pi2",
+  "description": "One-prompt software delivery with durable contracts, executable evidence, and automated validation",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

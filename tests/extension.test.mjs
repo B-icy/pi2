@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { existsSync, realpathSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 
-const candidates = [process.env.PI_CLI, ...[dirname(process.execPath), dirname(realpathSync(process.execPath))].map(p => join(p, 'node_modules/@earendil-works/pi-coding-agent/dist/cli.js'))].filter(Boolean);
+const candidates = [process.env.PI2_CLI, process.env.PI_CLI, ...[dirname(process.execPath), dirname(realpathSync(process.execPath))].map(p => join(p, 'node_modules/@earendil-works/pi-coding-agent/dist/cli.js'))].filter(Boolean);
 const cli = candidates.find(existsSync);
 let factory;
 if (cli) {
@@ -15,7 +15,7 @@ if (cli) {
   const jiti = createJiti(import.meta.url, { alias: { typebox: requirePi.resolve('typebox'), '@earendil-works/pi-coding-agent': join(dirname(cli), 'index.js') } });
   factory = await jiti.import(resolve(dirname(fileURLToPath(import.meta.url)), '../extensions/delivery.ts'), { default: true });
 }
-const options = { skip: !cli && 'Pi not found: set PI_CLI to run extension integration tests' };
+const options = { skip: !cli && 'Pi not found: set PI2_CLI or PI_CLI to run extension integration tests' };
 function fixture(t) {
   const cwd = mkdtempSync(join(tmpdir(), 'pi extension integration '));
   t.after(() => rmSync(cwd, { recursive: true, force: true }));

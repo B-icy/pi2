@@ -11,7 +11,7 @@ const { values: args } = parseArgs({ options: {
   mode: { type: 'string', default: 'both' }, task: { type: 'string', default: 'cli' },
   model: { type: 'string', default: 'inception/mercury-2.5-preview' }, provider: { type: 'string', default: 'openrouter' },
   timeout: { type: 'string', default: '600' }, 'max-turns': { type: 'string', default: '60' }, 'max-cost': { type: 'string', default: '3' },
-  'pi-cli': { type: 'string' }, python: { type: 'string' }, 'allow-live': { type: 'boolean', default: false },
+  'pi2-cli': { type: 'string' }, 'pi-cli': { type: 'string' }, python: { type: 'string' }, 'allow-live': { type: 'boolean', default: false },
 } });
 if (!args['allow-live']) throw Error('Live calls spend API credit and generated code runs with your permissions. Use --allow-live explicitly.');
 if (!['baseline', 'custom', 'both'].includes(args.mode) || !['cli', 'game'].includes(args.task)) throw Error('Use --mode baseline|custom|both and --task cli|game');
@@ -21,9 +21,9 @@ const root = dirname(fileURLToPath(import.meta.url)), project = dirname(root);
 // beside this script; when this package is nested inside a workspace, fixture,
 // venv and evidence directories live in the parent project instead.
 const home = existsSync(join(root, 'default', 'minecraft.py')) ? root : project;
-const candidates = [args['pi-cli'], process.env.PI_CLI, ...[dirname(process.execPath), dirname(realpathSync(process.execPath))].map(dir => join(dir, 'node_modules', '@earendil-works', 'pi-coding-agent', 'dist', 'cli.js'))].filter(Boolean);
+const candidates = [args['pi2-cli'], args['pi-cli'], process.env.PI2_CLI, process.env.PI_CLI, ...[dirname(process.execPath), dirname(realpathSync(process.execPath))].map(dir => join(dir, 'node_modules', '@earendil-works', 'pi-coding-agent', 'dist', 'cli.js'))].filter(Boolean);
 const cli = candidates.find(existsSync);
-if (!cli) throw Error('Cannot find pi CLI; pass --pi-cli /absolute/path/to/pi-coding-agent/dist/cli.js');
+if (!cli) throw Error('Cannot find pi CLI; pass --pi2-cli or --pi-cli /absolute/path/to/pi-coding-agent/dist/cli.js');
 const python = args.python || join(home, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
 if (!existsSync(python)) throw Error('Pass --python with an absolute Python executable path');
 const base = join(home, '.harness', 'evaluations', `${Date.now()}-${args.task}-${randomUUID().slice(0, 6)}`);

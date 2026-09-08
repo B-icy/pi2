@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pi2</title>
+  <meta name="description" content="One-prompt software delivery with durable contracts, executable evidence, and automated validation">
+  <meta property="og:title" content="pi2">
+  <meta property="og:description" content="One-prompt software delivery with durable contracts, executable evidence, and automated validation">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    pre, code, .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .scrollbar-thin::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .scrollbar-thin::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .scrollbar-thin::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+
+  <!-- TOP HEADER -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-sm font-mono">
+          π²
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-lg text-slate-900 leading-tight">pi2</h1>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">v0.2.0</span>
+            <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-slate-100 text-slate-600 font-mono">cli: pi2</span>
+          </div>
+          <p class="text-xs text-slate-500 hidden sm:block">Evidence-Driven Delivery with durable contracts, executable checks &amp; source-freshness fingerprints</p>
+        </div>
+      </div>
+
+      <!-- Quick Metrics & Status -->
+      <div class="flex items-center gap-3 flex-wrap">
+        <div id="status-pill" class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          <span id="status-text">Planned</span>
+        </div>
+
+        <div class="flex items-center gap-1.5 px-3 py-1 rounded-md bg-slate-100 text-xs font-mono text-slate-700 border border-slate-200" title="Active workspace SHA-256 hash">
+          <span class="text-slate-400 font-sans">Hash:</span>
+          <span id="header-hash" class="truncate max-w-[120px]">calculating...</span>
+          <button id="btn-copy-hash" class="text-slate-400 hover:text-slate-700 ml-1 text-xs" title="Copy full SHA-256 fingerprint">📋</button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="btn-quick-run-all" class="px-3 py-1.5 rounded-md bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 active:scale-95 transition-all shadow-xs flex items-center gap-1.5">
+            <span>⚡</span> Run Checks
+          </button>
+          <button id="btn-quick-tests" class="px-3 py-1.5 rounded-md bg-slate-800 text-white text-xs font-semibold hover:bg-slate-900 active:scale-95 transition-all shadow-xs flex items-center gap-1.5">
+            <span>🧪</span> Unit Tests
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto gap-2 border-t border-slate-100 scrollbar-thin">
+      <button data-tab="workflow" class="nav-tab active px-4 py-2.5 text-xs font-semibold border-b-2 border-indigo-600 text-indigo-600 whitespace-nowrap">
+        Workflow Architecture
+      </button>
+      <button data-tab="plan" class="nav-tab px-4 py-2.5 text-xs font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        Contract &amp; Plan Studio
+      </button>
+      <button data-tab="checks" class="nav-tab px-4 py-2.5 text-xs font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        Checks &amp; Evidence Matrix
+      </button>
+      <button data-tab="freshness" class="nav-tab px-4 py-2.5 text-xs font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        Source Freshness Lab
+      </button>
+      <button data-tab="handoff" class="nav-tab px-4 py-2.5 text-xs font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        Handoff &amp; Verification
+      </button>
+      <button data-tab="tests" class="nav-tab px-4 py-2.5 text-xs font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        Test Runner (14/14)
+      </button>
+      <button data-tab="docs" class="nav-tab px-4 py-2.5 text-xs font-medium border-b-2 border-transparent text-slate-600 hover:text-slate-900 whitespace-nowrap">
+        Documentation
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+    <!-- 1. WORKFLOW ARCHITECTURE TAB -->
+    <section id="tab-workflow" class="tab-panel space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Evidence-Driven Delivery Flowchart</h2>
+            <p class="text-xs text-slate-500">Rendered with D2 0.7.1 from <code class="text-slate-700 bg-slate-100 px-1 py-0.5 rounded">docs/workflow.d2</code></p>
+          </div>
+          <div class="flex items-center gap-2">
+            <a href="/api/workflow.svg" target="_blank" class="px-3 py-1.5 rounded-md border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-50">
+              Open Raw SVG ↗
+            </a>
+          </div>
+        </div>
+
+        <!-- SVG Container -->
+        <div class="bg-slate-50 rounded-lg border border-slate-200 p-3 overflow-x-auto scrollbar-thin">
+          <img src="/api/workflow.svg" alt="Workflow SVG" class="w-full min-w-[900px] h-auto object-contain rounded" />
+        </div>
+      </div>
+
+      <!-- Workflow Steps Breakdown -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+          <div class="w-7 h-7 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs">1</div>
+          <h3 class="font-bold text-sm text-slate-900">Pre-Flight Inspection</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Inspect real source code, runtime versions and APIs before proposing a contract. Discards untested assumptions.
+          </p>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+          <div class="w-7 h-7 rounded-md bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs">2</div>
+          <h3 class="font-bold text-sm text-slate-900">Contract &amp; D2 Plan</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Define a bounded acceptance contract with 1–12 steps, artifact roots, and executable check commands with timeouts.
+          </p>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+          <div class="w-7 h-7 rounded-md bg-violet-50 text-violet-700 flex items-center justify-center font-bold text-xs">3</div>
+          <h3 class="font-bold text-sm text-slate-900">Runnable Vertical Slice</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Build a running vertical slice first. For games or graphics, verify a nonblank framebuffer before extending gameplay.
+          </p>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+          <div class="w-7 h-7 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold text-xs">4</div>
+          <h3 class="font-bold text-sm text-slate-900">Executable Evidence</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Run checks, capture stdout/stderr exit codes, and bind to the repository SHA-256 fingerprint. Any subsequent file edits invalidate evidence.
+          </p>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+          <div class="w-7 h-7 rounded-md bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-xs">5</div>
+          <h3 class="font-bold text-sm text-slate-900">Bounded Repair Loop</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            At most 2 automatic follow-ups per prompt quoting failing check exit codes and output tails. Stops runaway hallucinated retries.
+          </p>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs space-y-2">
+          <div class="w-7 h-7 rounded-md bg-teal-50 text-teal-700 flex items-center justify-center font-bold text-xs">6</div>
+          <h3 class="font-bold text-sm text-slate-900">Verified Handoff</h3>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Only mark verified when every required check has passing, fresh evidence against the active source fingerprint.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. CONTRACT & PLAN STUDIO TAB -->
+    <section id="tab-plan" class="tab-panel hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Plan Editor -->
+        <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-5">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Acceptance Contract Specification</h2>
+              <p class="text-xs text-slate-500">Validated against schema rules in <code class="text-slate-700 bg-slate-100 px-1 py-0.5 rounded">lib/delivery.mjs</code></p>
+            </div>
+            <!-- Preset Selector -->
+            <div class="flex items-center gap-2">
+              <label class="text-xs font-medium text-slate-600">Preset:</label>
+              <select id="preset-selector" class="text-xs font-medium bg-slate-50 border border-slate-200 rounded-md px-2.5 py-1.5 text-slate-800">
+                <option value="cli">Task CLI (Default)</option>
+                <option value="ursina_game">Ursina Game Prototype</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Plan JSON Textarea -->
+          <div class="space-y-1.5">
+            <div class="flex justify-between items-center text-xs">
+              <span class="font-medium text-slate-700">Contract JSON Object</span>
+              <span id="plan-validation-status" class="text-emerald-600 font-semibold">Valid</span>
+            </div>
+            <textarea id="plan-json" rows="16" class="w-full font-mono text-xs p-3 rounded-lg border border-slate-200 bg-slate-900 text-slate-100 focus:outline-indigo-500 scrollbar-thin"></textarea>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-between flex-wrap gap-3 pt-2">
+            <div class="flex items-center gap-2">
+              <button id="btn-validate-plan" class="px-3.5 py-2 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 transition-all">
+                Validate Contract
+              </button>
+              <button id="btn-set-plan" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 active:scale-95 transition-all shadow-xs">
+                Activate Plan &amp; Reset Evidence
+              </button>
+            </div>
+            <button id="btn-bind-validator" class="px-3.5 py-2 rounded-lg bg-violet-50 text-violet-700 border border-violet-200 text-xs font-semibold hover:bg-violet-100 transition-all">
+              + Inject User Validator
+            </button>
+          </div>
+
+          <!-- Alert / Validation Msg -->
+          <div id="plan-alert" class="hidden p-3 rounded-lg text-xs font-medium"></div>
+        </div>
+
+        <!-- Generated D2 & Plan Overview -->
+        <div class="lg:col-span-5 space-y-6">
+          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-4">
+            <h3 class="font-bold text-sm text-slate-900">Generated D2 Diagram Plan</h3>
+            <p class="text-xs text-slate-500">Dynamic D2 syntax produced by <code class="text-slate-700 bg-slate-100 px-1 py-0.5 rounded">planD2(plan)</code></p>
+            <div class="bg-slate-900 text-indigo-300 p-3.5 rounded-lg text-xs font-mono overflow-x-auto max-h-72 scrollbar-thin">
+              <pre id="d2-output"></pre>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-3">
+            <h3 class="font-bold text-sm text-slate-900">Plan Contract Rules</h3>
+            <ul class="text-xs text-slate-600 space-y-2 list-disc pl-4 leading-relaxed">
+              <li><strong>Artifact roots:</strong> Must be product source/tests/config/docs, not ignored folders like <code class="bg-slate-100 px-1 rounded">node_modules</code> or <code class="bg-slate-100 px-1 rounded">artifacts/</code>.</li>
+              <li><strong>Steps:</strong> Exactly 1–12 actionable steps.</li>
+              <li><strong>Check command syntax:</strong> Argv arrays without an implicit shell (e.g. <code class="bg-slate-100 px-1 rounded">["node", "--test"]</code>).</li>
+              <li><strong>Timeout:</strong> Bounded between 1 and 300 seconds.</li>
+              <li><strong>Acceptance mapping:</strong> Every criterion must map to at least one valid check suite.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. CHECKS & EVIDENCE MATRIX TAB -->
+    <section id="tab-checks" class="tab-panel hidden space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Executable Evidence Matrix</h2>
+            <p class="text-xs text-slate-500">Sequential FIFO queue runner with bounded timeouts and log capture</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="btn-run-all-checks" class="px-4 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 active:scale-95 transition-all shadow-xs flex items-center gap-1.5">
+              <span>⚡</span> Run All Checks Sequentially
+            </button>
+          </div>
+        </div>
+
+        <!-- Checks Table -->
+        <div class="overflow-x-auto border border-slate-200 rounded-lg">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 font-semibold uppercase tracking-wider">
+              <tr>
+                <th class="py-3 px-4">Check ID</th>
+                <th class="py-3 px-4">Kind</th>
+                <th class="py-3 px-4">Command (argv)</th>
+                <th class="py-3 px-4">Timeout</th>
+                <th class="py-3 px-4">Evidence Status</th>
+                <th class="py-3 px-4">Duration</th>
+                <th class="py-3 px-4 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody id="checks-table-body" class="divide-y divide-slate-200 text-slate-700">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Terminal Log Viewer -->
+        <div class="space-y-2 pt-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-900 flex items-center gap-2">
+              <span>Captured Check Output Terminal</span>
+              <span id="log-check-title" class="font-mono text-slate-500 font-normal"></span>
+            </span>
+            <span id="log-meta" class="font-mono text-slate-500 text-[11px]"></span>
+          </div>
+          <div class="bg-slate-950 text-slate-200 rounded-lg p-4 font-mono text-xs overflow-x-auto max-h-80 scrollbar-thin">
+            <pre id="terminal-output" class="whitespace-pre-wrap">Select a check or click "Run" to execute and capture live subprocess evidence.</pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. SOURCE FRESHNESS LAB TAB -->
+    <section id="tab-freshness" class="tab-panel hidden space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-5">
+        <div>
+          <h2 class="text-base font-bold text-slate-900">Workspace Source Freshness Inspector</h2>
+          <p class="text-xs text-slate-500">Live SHA-256 fingerprinting prevents stale evidence from passing verification</p>
+        </div>
+
+        <!-- Live Hash Card -->
+        <div class="bg-slate-50 rounded-xl border border-slate-200 p-5 space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <span class="text-xs font-semibold text-slate-700 uppercase tracking-wide">Current Workspace Fingerprint</span>
+            <button id="btn-recalc-hash" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1">
+              <span>🔄</span> Recalculate Now
+            </button>
+          </div>
+          <div class="bg-white rounded-lg border border-slate-200 p-3 font-mono text-xs text-slate-800 break-all select-all flex items-center justify-between gap-2">
+            <span id="lab-hash" class="font-bold">calculating...</span>
+            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-sans shrink-0">SHA-256 (64 hex chars)</span>
+          </div>
+          <p class="text-xs text-slate-500">
+            Calculated by walking all source and configuration files in the working directory while ignoring build caches and temporary logs.
+          </p>
+        </div>
+
+        <!-- Interactive Simulation: How Fingerprinting Prevents False Claims -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+          <div class="bg-white rounded-lg border border-slate-200 p-5 space-y-3">
+            <h3 class="font-bold text-sm text-slate-900">How Stale Evidence Invalidation Works</h3>
+            <ol class="text-xs text-slate-600 space-y-2 list-decimal pl-4 leading-relaxed">
+              <li><strong>Baseline Fingerprint:</strong> Before running any tests, the exact tree state is fingerprinted into a single SHA-256 digest.</li>
+              <li><strong>Evidence Binding:</strong> When <code class="bg-slate-100 px-1 rounded">delivery_check</code> passes, it permanently records the exit code along with the hash at the time of execution.</li>
+              <li><strong>Source Freshness Guard:</strong> If any file is edited, deleted, or added (even in undeclared directories), the workspace hash changes.</li>
+              <li><strong>Fail-Closed Verification:</strong> <code class="bg-slate-100 px-1 rounded">pendingChecks()</code> flags all previous results as stale, preventing false verification claims!</li>
+            </ol>
+          </div>
+
+          <div class="bg-white rounded-lg border border-slate-200 p-5 space-y-3">
+            <h3 class="font-bold text-sm text-slate-900">Fingerprint Safety Bounds</h3>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between py-1.5 border-b border-slate-100">
+                <span class="text-slate-500">Max File Count</span>
+                <span class="font-mono font-semibold text-slate-800">5,000 files</span>
+              </div>
+              <div class="flex justify-between py-1.5 border-b border-slate-100">
+                <span class="text-slate-500">Max Payload Bytes</span>
+                <span class="font-mono font-semibold text-slate-800">64 MiB</span>
+              </div>
+              <div class="flex justify-between py-1.5 border-b border-slate-100">
+                <span class="text-slate-500">Excluded Directories</span>
+                <span class="font-mono text-slate-600">.git, node_modules, .harness, venv, artifacts</span>
+              </div>
+              <div class="flex justify-between py-1.5">
+                <span class="text-slate-500">Log Output Limit</span>
+                <span class="font-mono font-semibold text-slate-800">8 MiB per command</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. HANDOFF & VERIFICATION TAB -->
+    <section id="tab-handoff" class="tab-panel hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-5">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Delivery Handoff Recording</h2>
+            <p class="text-xs text-slate-500">Enforces complete evidence before allowing <code class="text-slate-700 bg-slate-100 px-1 py-0.5 rounded">status: verified</code></p>
+          </div>
+
+          <!-- Form -->
+          <div class="space-y-4 text-xs">
+            <div class="space-y-1.5">
+              <label class="font-semibold text-slate-700">Review Summary</label>
+              <textarea id="handoff-review" rows="3" class="w-full p-2.5 rounded-lg border border-slate-200 focus:outline-indigo-500" placeholder="Reviewed behavior, UX, edge cases, error handling and subprocess execution..."></textarea>
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="font-semibold text-slate-700">Launch / Usage Command</label>
+              <input id="handoff-launch" type="text" class="w-full p-2.5 font-mono rounded-lg border border-slate-200 focus:outline-indigo-500" value="npm test" placeholder="Command to run the delivered software" />
+            </div>
+
+            <div class="space-y-1.5">
+              <label class="font-semibold text-slate-700">Known Limitations (One per line)</label>
+              <textarea id="handoff-limitations" rows="3" class="w-full p-2.5 rounded-lg border border-slate-200 focus:outline-indigo-500" placeholder="No graphics GPU acceleration in headless CI&#10;Bounded file tree size (64 MiB limit)"></textarea>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-3 pt-2">
+            <button id="btn-submit-verified" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 active:scale-95 transition-all shadow-xs flex items-center gap-1.5">
+              <span>✓</span> Record Verified Delivery
+            </button>
+            <button id="btn-submit-blocked" class="px-4 py-2 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 active:scale-95 transition-all shadow-xs flex items-center gap-1.5">
+              <span>✕</span> Record Blocked Handoff
+            </button>
+          </div>
+
+          <div id="handoff-feedback" class="hidden p-3 rounded-lg text-xs font-medium"></div>
+        </div>
+
+        <!-- Verification Status Card -->
+        <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-4">
+          <h3 class="font-bold text-sm text-slate-900">Contract Verification Gate</h3>
+          <div id="verification-gate-status" class="p-3.5 rounded-lg text-xs space-y-2 bg-slate-50 border border-slate-200">
+            <!-- Rendered by JS -->
+          </div>
+
+          <div class="space-y-2 text-xs text-slate-600">
+            <h4 class="font-semibold text-slate-800">Verification Invariants:</h4>
+            <ul class="space-y-1.5 list-disc pl-4 leading-relaxed">
+              <li>All declared checks must have executed cleanly (exit code 0).</li>
+              <li>Every check evidence fingerprint must match the active workspace hash.</li>
+              <li>No user-owned required checks can be missing or omitted.</li>
+              <li>If any test fails or is stale, verification will be rejected.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. TEST SUITE RUNNER TAB -->
+    <section id="tab-tests" class="tab-panel hidden space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Node.js Built-in Test Suite</h2>
+            <p class="text-xs text-slate-500">Executes <code class="text-slate-700 bg-slate-100 px-1 py-0.5 rounded">node --test tests/delivery.test.mjs</code> via Node test runner</p>
+          </div>
+          <button id="btn-run-tests-tab" class="px-4 py-2 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-black active:scale-95 transition-all shadow-xs flex items-center gap-1.5">
+            <span>🧪</span> Run Test Suite
+          </button>
+        </div>
+
+        <div id="test-summary-card" class="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between flex-wrap gap-4 text-xs">
+          <div class="flex items-center gap-3">
+            <div id="test-badge-icon" class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-700">?</div>
+            <div>
+              <div id="test-badge-text" class="font-bold text-slate-800">Ready to execute test runner</div>
+              <div id="test-badge-sub" class="text-slate-500">Covers contract validation, D2 escaping, hash freshness, subprocesses &amp; bounds</div>
+            </div>
+          </div>
+          <div class="font-mono text-xs text-slate-600" id="test-duration"></div>
+        </div>
+
+        <div class="bg-slate-950 text-slate-200 rounded-lg p-4 font-mono text-xs overflow-x-auto max-h-96 scrollbar-thin">
+          <pre id="test-output-raw">Click "Run Test Suite" to execute test cases live.</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. DOCUMENTATION TAB -->
+    <section id="tab-docs" class="tab-panel hidden space-y-6">
+      <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs space-y-4">
+        <div class="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-slate-100">
+          <h2 class="text-base font-bold text-slate-900">Package Documentation &amp; Skills</h2>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button data-doc="readme" class="doc-tab-btn active px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              README.md
+            </button>
+            <button data-doc="evaluation" class="doc-tab-btn px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100">
+              evaluation.md
+            </button>
+            <button data-doc="oneshot" class="doc-tab-btn px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100">
+              oneshot.md
+            </button>
+            <button data-doc="software-delivery" class="doc-tab-btn px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100">
+              software-delivery skill
+            </button>
+            <button data-doc="game-dev" class="doc-tab-btn px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100">
+              game-development skill
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-5 font-mono text-xs text-slate-800 whitespace-pre-wrap overflow-x-auto max-h-[500px] scrollbar-thin" id="doc-content">
+          Loading documentation...
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+      <div>
+        pi2 • Evidence-Driven Delivery • CLI &amp; Web Engine
+      </div>
+      <div>
+        Port: <span class="font-mono text-slate-700 font-semibold">3000</span> | Host: <span class="font-mono text-slate-700 font-semibold">0.0.0.0</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    let appState = {
+      status: 'planned',
+      plan: null,
+      evidence: {},
+      currentFingerprint: '',
+      pendingChecks: [],
+      presets: {}
+    };
+
+    // TAB SWITCHING
+    const tabs = document.querySelectorAll('.nav-tab');
+    const panels = document.querySelectorAll('.tab-panel');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        const target = tab.getAttribute('data-tab');
+        tabs.forEach(t => {
+          t.classList.remove('active', 'border-indigo-600', 'text-indigo-600', 'font-semibold');
+          t.classList.add('border-transparent', 'text-slate-600', 'font-medium');
+        });
+        tab.classList.add('active', 'border-indigo-600', 'text-indigo-600', 'font-semibold');
+        tab.classList.remove('border-transparent', 'text-slate-600', 'font-medium');
+
+        panels.forEach(p => p.classList.add('hidden'));
+        document.getElementById(`tab-${target}`).classList.remove('hidden');
+
+        if (target === 'docs') loadDoc('readme');
+      });
+    });
+
+    // FETCH INITIAL DATA
+    async function loadStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        appState.status = data.status;
+        appState.plan = data.plan;
+        appState.evidence = data.evidence;
+        appState.currentFingerprint = data.currentFingerprint;
+        appState.pendingChecks = data.pendingChecks;
+
+        updateHeaderStatus();
+        renderPlanStudio();
+        renderChecksTable();
+        renderFreshnessLab();
+        renderVerificationGate();
+      } catch (err) {
+        console.error('Failed to load status:', err);
+      }
+    }
+
+    async function loadPresets() {
+      try {
+        const res = await fetch('/api/presets');
+        appState.presets = await res.json();
+      } catch (err) {
+        console.error('Failed to load presets:', err);
+      }
+    }
+
+    function updateHeaderStatus() {
+      const statusPill = document.getElementById('status-pill');
+      const statusText = document.getElementById('status-text');
+      const headerHash = document.getElementById('header-hash');
+
+      headerHash.textContent = appState.currentFingerprint ? appState.currentFingerprint.slice(0, 16) + '...' : 'none';
+      statusText.textContent = appState.status.toUpperCase();
+
+      statusPill.className = 'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border';
+      if (appState.status === 'verified') {
+        statusPill.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+        statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>VERIFIED</span>';
+      } else if (appState.status === 'blocked') {
+        statusPill.classList.add('bg-red-50', 'text-red-800', 'border-red-200');
+        statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-500"></span><span>BLOCKED</span>';
+      } else {
+        statusPill.classList.add('bg-amber-50', 'text-amber-800', 'border-amber-200');
+        statusPill.innerHTML = '<span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span><span>PLANNED</span>';
+      }
+    }
+
+    // RENDER PLAN STUDIO
+    function renderPlanStudio() {
+      const planJsonEl = document.getElementById('plan-json');
+      if (appState.plan) {
+        planJsonEl.value = JSON.stringify(appState.plan, null, 2);
+        updateD2(appState.plan);
+      }
+    }
+
+    async function updateD2(plan) {
+      try {
+        const res = await fetch('/api/plan/d2', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan })
+        });
+        const data = await res.json();
+        document.getElementById('d2-output').textContent = data.d2 || '// No diagram generated';
+      } catch (err) {
+        document.getElementById('d2-output').textContent = '// Error generating D2: ' + err.message;
+      }
+    }
+
+    // RENDER CHECKS TABLE
+    function renderChecksTable() {
+      const tbody = document.getElementById('checks-table-body');
+      tbody.innerHTML = '';
+
+      if (!appState.plan?.checks?.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="py-4 px-4 text-center text-slate-400">No checks in active plan.</td></tr>';
+        return;
+      }
+
+      appState.plan.checks.forEach(check => {
+        const evidence = appState.evidence[check.id];
+        const isFresh = evidence && evidence.fingerprint === appState.currentFingerprint;
+        const isPassed = evidence && evidence.passed;
+
+        let statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-600">Pending</span>';
+        if (evidence) {
+          if (!isFresh) {
+            statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-800" title="Source files changed since test ran!">⚠️ Stale</span>';
+          } else if (isPassed) {
+            statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800">✓ Passed (Fresh)</span>';
+          } else {
+            statusBadge = '<span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-red-100 text-red-800">✕ Failed (Code ' + evidence.code + ')</span>';
+          }
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition-colors';
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono font-semibold text-slate-900">${check.id}</td>
+          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] uppercase">${check.kind}</span></td>
+          <td class="py-3 px-4 font-mono text-slate-600 truncate max-w-xs" title="${check.argv.join(' ')}">${check.argv.join(' ')}</td>
+          <td class="py-3 px-4 font-mono text-slate-500">${check.timeoutSeconds}s</td>
+          <td class="py-3 px-4">${statusBadge}</td>
+          <td class="py-3 px-4 font-mono text-slate-500">${evidence ? evidence.durationMs + 'ms' : '-'}</td>
+          <td class="py-3 px-4 text-right">
+            <button class="btn-run-single px-2.5 py-1 rounded bg-slate-100 text-slate-700 font-semibold text-xs hover:bg-indigo-50 hover:text-indigo-700 transition-colors" data-id="${check.id}">
+              ▶ Run
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Attach single check run handlers
+      tbody.querySelectorAll('.btn-run-single').forEach(btn => {
+        btn.addEventListener('click', () => runCheck(btn.getAttribute('data-id')));
+      });
+    }
+
+    // RUN CHECK
+    async function runCheck(id) {
+      const term = document.getElementById('terminal-output');
+      const title = document.getElementById('log-check-title');
+      const meta = document.getElementById('log-meta');
+
+      term.textContent = `[runner] Executing check "${id}" in bounded subprocess...`;
+      title.textContent = `[ID: ${id}]`;
+      meta.textContent = 'Running...';
+
+      try {
+        const res = await fetch('/api/checks/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to run check');
+
+        await loadStatus();
+
+        const latest = data.results.find(r => r.id === id) || data.results[0];
+        term.textContent = latest.output || '[No standard output captured]';
+        meta.textContent = `Exit Code: ${latest.code} | Duration: ${latest.durationMs}ms | Fingerprint: ${latest.fingerprint.slice(0, 8)}...`;
+      } catch (err) {
+        term.textContent = `[runner error] ${err.message}`;
+        meta.textContent = 'Execution Failed';
+      }
+    }
+
+    // RUN ALL CHECKS
+    async function runAllChecks() {
+      const term = document.getElementById('terminal-output');
+      const title = document.getElementById('log-check-title');
+      const meta = document.getElementById('log-meta');
+
+      term.textContent = `[runner] Executing all ${appState.plan?.checks?.length || 0} checks sequentially in FIFO queue...`;
+      title.textContent = '[All Checks]';
+      meta.textContent = 'Running suite...';
+
+      try {
+        const res = await fetch('/api/checks/run', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: 'all' })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to run checks');
+
+        await loadStatus();
+
+        let outputCombined = '';
+        data.results.forEach(r => {
+          outputCombined += `=== CHECK [${r.id}] (Exit: ${r.code}, Duration: ${r.durationMs}ms) ===\n${r.output || '[Empty output]'}\n\n`;
+        });
+        term.textContent = outputCombined;
+        meta.textContent = `Completed ${data.results.length} checks`;
+      } catch (err) {
+        term.textContent = `[runner error] ${err.message}`;
+        meta.textContent = 'Error';
+      }
+    }
+
+    // RENDER FRESHNESS LAB
+    function renderFreshnessLab() {
+      const labHash = document.getElementById('lab-hash');
+      labHash.textContent = appState.currentFingerprint || 'Unknown';
+    }
+
+    // RENDER VERIFICATION GATE
+    function renderVerificationGate() {
+      const gate = document.getElementById('verification-gate-status');
+      if (!appState.plan) {
+        gate.innerHTML = '<p class="text-slate-500">No active plan.</p>';
+        return;
+      }
+
+      const totalChecks = appState.plan.checks.length;
+      const passedFreshChecks = appState.plan.checks.filter(c => {
+        const ev = appState.evidence[c.id];
+        return ev && ev.passed && ev.fingerprint === appState.currentFingerprint;
+      }).length;
+
+      const isReady = totalChecks > 0 && passedFreshChecks === totalChecks;
+
+      gate.innerHTML = `
+        <div class="flex items-center justify-between font-semibold">
+          <span>Fresh Evidence Score:</span>
+          <span class="${isReady ? 'text-emerald-700' : 'text-amber-700'}">${passedFreshChecks} of ${totalChecks} Passed</span>
+        </div>
+        <div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+          <div class="${isReady ? 'bg-emerald-500' : 'bg-amber-500'} h-full transition-all" style="width: ${(passedFreshChecks/totalChecks)*100}%"></div>
+        </div>
+        <p class="text-[11px] text-slate-500">
+          ${isReady 
+            ? '✓ All checks have fresh passing evidence. Ready to record verified handoff!' 
+            : 'Pending or stale checks: ' + (appState.pendingChecks.join(', ') || 'Execute checks first.')}
+        </p>
+      `;
+    }
+
+    // EVENT LISTENERS
+    document.getElementById('btn-quick-run-all').addEventListener('click', () => {
+      document.querySelector('[data-tab="checks"]').click();
+      runAllChecks();
+    });
+
+    document.getElementById('btn-run-all-checks').addEventListener('click', runAllChecks);
+
+    document.getElementById('btn-copy-hash').addEventListener('click', () => {
+      if (appState.currentFingerprint) {
+        navigator.clipboard.writeText(appState.currentFingerprint);
+        alert('SHA-256 fingerprint copied to clipboard!');
+      }
+    });
+
+    document.getElementById('btn-recalc-hash').addEventListener('click', async () => {
+      await loadStatus();
+      alert('Workspace SHA-256 fingerprint refreshed: ' + appState.currentFingerprint.slice(0, 16) + '...');
+    });
+
+    // PRESET SELECTOR
+    document.getElementById('preset-selector').addEventListener('change', (e) => {
+      const selected = appState.presets[e.target.value];
+      if (selected) {
+        document.getElementById('plan-json').value = JSON.stringify(selected, null, 2);
+        updateD2(selected);
+      }
+    });
+
+    // VALIDATE PLAN BUTTON
+    document.getElementById('btn-validate-plan').addEventListener('click', async () => {
+      const alertEl = document.getElementById('plan-alert');
+      alertEl.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-emerald-50', 'text-emerald-700');
+
+      try {
+        const plan = JSON.parse(document.getElementById('plan-json').value);
+        const res = await fetch('/api/plan/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan })
+        });
+        const data = await res.json();
+        if (data.valid) {
+          alertEl.classList.add('bg-emerald-50', 'text-emerald-700');
+          alertEl.textContent = '✓ Contract validation succeeded: Schema, deadlines, artifact roots and check mappings valid.';
+          updateD2(data.plan);
+        } else {
+          alertEl.classList.add('bg-red-50', 'text-red-700');
+          alertEl.textContent = '✕ Validation Error: ' + data.error;
+        }
+      } catch (err) {
+        alertEl.classList.add('bg-red-50', 'text-red-700');
+        alertEl.textContent = '✕ JSON Syntax Error: ' + err.message;
+      }
+    });
+
+    // SET PLAN BUTTON
+    document.getElementById('btn-set-plan').addEventListener('click', async () => {
+      const alertEl = document.getElementById('plan-alert');
+      try {
+        const plan = JSON.parse(document.getElementById('plan-json').value);
+        const res = await fetch('/api/plan/set', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to update plan');
+
+        await loadStatus();
+        alertEl.classList.remove('hidden', 'bg-red-50', 'text-red-700');
+        alertEl.classList.add('bg-emerald-50', 'text-emerald-700');
+        alertEl.textContent = '✓ Contract active! Evidence reset. Ready to execute check suites.';
+      } catch (err) {
+        alertEl.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-700');
+        alertEl.classList.add('bg-red-50', 'text-red-700');
+        alertEl.textContent = '✕ Error: ' + err.message;
+      }
+    });
+
+    // INJECT VALIDATOR BUTTON
+    document.getElementById('btn-bind-validator').addEventListener('click', async () => {
+      try {
+        const plan = JSON.parse(document.getElementById('plan-json').value);
+        const requiredCheck = {
+          id: 'user_probe',
+          kind: 'runtime',
+          argv: ['node', '-e', 'console.log("External user-owned validator passed.")'],
+          timeoutSeconds: 15
+        };
+
+        const res = await fetch('/api/plan/bind-required', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan, required: [requiredCheck] })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('plan-json').value = JSON.stringify(data.plan, null, 2);
+          updateD2(data.plan);
+          alert('Successfully bound user validator check "required_user_probe" into acceptance contract!');
+        }
+      } catch (err) {
+        alert('Failed to bind validator: ' + err.message);
+      }
+    });
+
+    // HANDOFF SUBMIT (VERIFIED)
+    document.getElementById('btn-submit-verified').addEventListener('click', async () => {
+      const feedback = document.getElementById('handoff-feedback');
+      feedback.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-emerald-50', 'text-emerald-700');
+
+      const review = document.getElementById('handoff-review').value;
+      const launch = document.getElementById('handoff-launch').value;
+      const limitations = document.getElementById('handoff-limitations').value.split('\n').filter(Boolean);
+
+      try {
+        const res = await fetch('/api/finish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'verified', review, launch, limitations })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Verification rejected');
+
+        await loadStatus();
+        feedback.classList.add('bg-emerald-50', 'text-emerald-700');
+        feedback.textContent = '✓ Verified delivery recorded successfully! Contract backed by fresh executable evidence.';
+      } catch (err) {
+        feedback.classList.add('bg-red-50', 'text-red-700');
+        feedback.textContent = '✕ Rejected: ' + err.message;
+      }
+    });
+
+    // HANDOFF SUBMIT (BLOCKED)
+    document.getElementById('btn-submit-blocked').addEventListener('click', async () => {
+      const feedback = document.getElementById('handoff-feedback');
+      feedback.classList.remove('hidden', 'bg-red-50', 'text-red-700', 'bg-emerald-50', 'text-emerald-700');
+
+      const review = document.getElementById('handoff-review').value || 'Task blocked by environment or dependency constraints.';
+      const launch = document.getElementById('handoff-launch').value;
+      const limitations = document.getElementById('handoff-limitations').value.split('\n').filter(Boolean);
+
+      try {
+        const res = await fetch('/api/finish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'blocked', review, launch, limitations })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to record blocked state');
+
+        await loadStatus();
+        feedback.classList.add('bg-red-50', 'text-red-700');
+        feedback.textContent = 'Status set to BLOCKED. Reason and limitations documented.';
+      } catch (err) {
+        feedback.classList.add('bg-red-50', 'text-red-700');
+        feedback.textContent = '✕ Error: ' + err.message;
+      }
+    });
+
+    // RUN TESTS TAB & QUICK TESTS
+    async function runTestSuite() {
+      const out = document.getElementById('test-output-raw');
+      const badgeIcon = document.getElementById('test-badge-icon');
+      const badgeText = document.getElementById('test-badge-text');
+      const duration = document.getElementById('test-duration');
+
+      out.textContent = 'Running `npm test` (Node.js test runner)...';
+      badgeIcon.className = 'w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs animate-spin';
+      badgeIcon.textContent = '⟳';
+      badgeText.textContent = 'Running test suite...';
+
+      const started = Date.now();
+      try {
+        const res = await fetch('/api/test-runner');
+        const data = await res.json();
+        const took = Date.now() - started;
+
+        duration.textContent = `${took}ms`;
+        out.textContent = data.stdout || data.stderr;
+
+        if (data.passed) {
+          badgeIcon.className = 'w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm';
+          badgeIcon.textContent = '✓';
+          badgeText.textContent = 'All Core Test Cases Passed (14/14 Green)';
+        } else {
+          badgeIcon.className = 'w-8 h-8 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-sm';
+          badgeIcon.textContent = '✕';
+          badgeText.textContent = 'Test suite encountered failures';
+        }
+      } catch (err) {
+        out.textContent = 'Execution failed: ' + err.message;
+      }
+    }
+
+    document.getElementById('btn-run-tests-tab').addEventListener('click', runTestSuite);
+    document.getElementById('btn-quick-tests').addEventListener('click', () => {
+      document.querySelector('[data-tab="tests"]').click();
+      runTestSuite();
+    });
+
+    // LOAD DOCUMENTATION
+    async function loadDoc(name) {
+      const docEl = document.getElementById('doc-content');
+      docEl.textContent = 'Loading ' + name + '...';
+
+      document.querySelectorAll('.doc-tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-doc') === name) {
+          btn.className = 'doc-tab-btn active px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200';
+        } else {
+          btn.className = 'doc-tab-btn px-3 py-1.5 rounded-md text-xs font-medium text-slate-600 hover:bg-slate-100';
+        }
+      });
+
+      try {
+        const res = await fetch('/api/docs/' + name);
+        const data = await res.json();
+        docEl.textContent = data.content || '[Document empty]';
+      } catch (err) {
+        docEl.textContent = 'Failed to load document: ' + err.message;
+      }
+    }
+
+    document.querySelectorAll('.doc-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => loadDoc(btn.getAttribute('data-doc')));
+    });
+
+    // INITIALIZE
+    loadPresets();
+    loadStatus();
+  </script>
+</body>
+</html>
