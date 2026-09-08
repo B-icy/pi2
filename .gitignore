@@ -1,0 +1,12 @@
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+.harness/
+artifacts/
+saves/
+.venv/
+venv/
+.tools/
+.pytest_cache/
+.ruff_cache/

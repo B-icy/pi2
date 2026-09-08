@@ -1,0 +1,14 @@
+direction: right
+inspect: "Inspect repository + installed APIs"
+contract: "Acceptance contract\nScope, risks, concrete checks"
+plan: "D2 implementation plan"
+slice: "Runnable vertical slice\nRendering verified first for games"
+build: "Implement features + regression tests"
+verify: "Run checks against source fingerprint\nRecord exit status + output tail"
+review: "Adversarial review\nInteraction + visual + failure paths"
+repair: "Repair failures (bounded)\nFailing check + quoted output tail"
+deliver: "Evidence + launch instructions\nExplicit limitations"
+inspect -> contract -> plan -> slice -> build -> verify -> review -> deliver
+verify -> repair: failed / stale
+review -> repair: defect
+repair -> verify
