@@ -139,10 +139,10 @@ Run from the repository root. If pi is not found by the integration tests, set `
 
 ```sh
 node ./evaluate.mjs --allow-live --task cli --mode both
-node ./evaluate.mjs --allow-live --task game --mode both --timeout 600 --max-turns 90
+node ./evaluate.mjs --allow-live --task game --mode both --timeout 600 --max-turns 100
 ```
 
-Defaults: `openrouter/inception/mercury-2.5-preview`, the Mercury 2.5 model in this machine's catalog. Override `--provider`, `--model`, `--python`, `--pi-cli`, `--timeout`, `--max-turns`, `--max-cost`. Existing pi authentication is used; no keys are copied into the repo.
+Defaults: `openrouter/inception/mercury-2.5-preview`, the Mercury 2.5 model in this machine's catalog, with a 100-productive-turn cap. Override `--provider`, `--model`, `--python`, `--pi-cli`, `--timeout`, `--max-turns`, `--max-cost`. Existing pi authentication is used; no keys are copied into the repo.
 
 Each trial gets a new directory. Game trials begin from the included deliberately-defective baseline `default/minecraft.py` (a preserved original one-shot result, not an upgraded game) and require `--python` pointing at an interpreter with Ursina installed. Baseline disables project context, extensions and skills. Custom loads this package and a fixed required validator manifest outside its workspace. Both are scored with the same final external checks. **The custom condition receives validator feedback during development**; this measures oracle-assisted harness behavior, not an unassisted model benchmark. Earlier trials without that feedback are documented separately.
 
