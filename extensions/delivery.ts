@@ -90,6 +90,16 @@ export default function delivery(pi: ExtensionAPI) {
     // Mutating event.input is a documented pi guarantee and affects execution.
     const cap = Number(pi.getFlag('delivery-bash-cap')) || 0;
     if (cap > 0 && ['bash', 'powershell'].includes(event.toolName) && event.input && typeof event.input === 'object') {
+      const command = typeof event.input.command === 'string' ? event.input.command : '';
+      const broadTermination =
+        /\b(?:pkill|killall)\b/i.test(command) ||
+        /\bkill\b\s+(?:-\S+\s+)*(?:-1|0)(?:\s|$)/i.test(command) ||
+        /\btaskkill\b[^\n]*(?:\/im|\*)/i.test(command) ||
+        /\bstop-process\b[^\n]*\s-name\b/i.test(command) ||
+        /\bget-process\b[^\n]*\|\s*stop-process\b/i.test(command);
+      if (broadTermination) {
+        return { block: true, reason: 'Broad process termination is prohibited in bounded delivery runs. Capture the launched child PID and terminate only that PID.' };
+      }
       if (typeof event.input.timeout !== 'number' || event.input.timeout > cap) event.input.timeout = cap;
     }
   });

@@ -30,7 +30,7 @@ const base = join(home, '.harness', 'evaluations', `${Date.now()}-${args.task}-$
 mkdirSync(base, { recursive: true });
 const prompts = {
   cli: `Build a simple Python command-line task tracker. It should let me add, list, and complete tasks, save them between runs, and include tests and a short README.`,
-  game: `Improve the supplied minecraft.py into a polished, playable creative voxel sandbox using the installed Ursina 7.0.0 engine. Preserve minecraft.py as the launcher; modules are welcome. Requirements: safe spawn, WASD/jump/collision, reach-limited mining and placing without overlap/player intersection, eight selectable block types, visible target feedback and readable hotbar, actual pause/resume via Escape, procedural or bundled textures, deterministic terrain, scalable rendering (not one entity per solid block), save/load with corruption handling, README with controls/setup, and automated tests. Importing minecraft must not open a window. Implement --help and --smoke --screenshot PATH: smoke must instantiate the real renderer, exercise actual input handlers for mine/place/selection/pause/save-load, save a screenshot and exit zero only if assertions pass. Work in verified stages: first adapt the verified starter recipe bundled in your system context into a --smoke path that renders a real nonblank offscreen frame (assert pixel variety, not just file existence) and make the external renderer probe pass; only then extend gameplay breadth. Do not defer graphics verification to the end. Run the product, fix failures, and deliver a complete small game rather than an ambitious scaffold. Use D2 for flowchart planning.`,
+  game: `Build me a simple Minecraft-style game in Python. I should be able to explore the world, break and place different blocks, pause, and save my progress. Make it feel complete enough to play, and include tests and setup instructions.`,
 };
 const probe = join(root, 'skills', 'game-development', 'scripts', 'verify_ursina.py');
 const environment = `\nEnvironment: cwd is the isolated work directory. Python executable: ${JSON.stringify(python)}. Node: ${JSON.stringify(process.execPath)}. Invoke these exact executable paths (quote them in shell commands). Set a bounded timeout on every bash command and never run filesystem-wide searches (find /, ls -R from the root, find of whole drives): one hung command can consume the entire time budget. Paths given in this prompt are absolute and valid as-is; do not hunt for them. Ursina and Pillow are already installed in that Python. Do not touch files outside this work directory or run nested pi agents. No network installs, no deployment. You have at most ${args['max-turns']} productive model turns (recovered provider connection errors do not consume that budget) and ${args.timeout} seconds; reserve time for verification. If your declared checks pass with much of the budget unused, re-check whether every task requirement is implemented and verified, and use the remaining budget to complete missing requirements rather than stopping at the first passing slice. Generated logs/screenshots go in artifacts/.` + (args.task === 'game' ? `\nExternal renderer probe: ${JSON.stringify(probe)}. Run it against minecraft.py early (example: PYTHON "..." minecraft.py --screenshot artifacts/probe.png) and again after renderer changes; its required check runs the same way. The path is absolute; use it as-is.` : '');
@@ -43,8 +43,8 @@ for (const mode of args.mode === 'both' ? ['baseline', 'custom'] : [args.mode]) 
   if (mode === 'custom') {
     const manifest = join(base, 'required-validators.json');
     const argv = args.task === 'cli' ? [python, join(root, 'tests', 'grade_cli.py'), cwd]
-      : [python, join(root, 'skills', 'game-development', 'scripts', 'verify_ursina.py'), 'minecraft.py', '--screenshot', 'artifacts/required-smoke.png'];
-    atomicJson(manifest, { version: 1, checks: [{ id: 'external_behavior', kind: 'runtime', argv, timeoutSeconds: 90 }] });
+      : [python, join(root, 'tests', 'grade_game.py'), cwd, '--probe', join(root, 'skills', 'game-development', 'scripts', 'verify_ursina.py')];
+    atomicJson(manifest, { version: 1, checks: [{ id: 'external_behavior', kind: 'runtime', argv, timeoutSeconds: 120 }] });
     flags.push('-e', join(root, 'extensions', 'delivery.ts'), '--skill', join(root, 'skills'), '--delivery-strict', '--delivery-validators', manifest, '--delivery-bash-cap', '120');
   }
   flags.push('--', prompts[args.task] + environment);
@@ -77,18 +77,22 @@ for (const mode of args.mode === 'both' ? ['baseline', 'custom'] : [args.mode]) 
       if (buffer.length > 2 * 1024 * 1024) budget('oversized event');
     },
   });
-  const summary = { mode, task: args.task, oracleGuided: mode === 'custom', provider: args.provider, model: args.model, cwd, exitCode: result.code, timedOut: result.timedOut, budgetReason, turns, productiveTurns: turns - providerErrors, providerErrors, endedOnProviderError: lastStop === 'error', reportedCost: cost, reportedTokens: tokens, lastStop, deliveryStatus, errors, tools, durationMs: result.durationMs };
+  const productiveTurnStarts = turns - providerErrors;
+  const productiveTurns = budgetReason === 'productive model turn limit'
+    ? Math.min(productiveTurnStarts, Number(args['max-turns']))
+    : productiveTurnStarts;
+  const summary = { mode, task: args.task, oracleGuided: mode === 'custom', provider: args.provider, model: args.model, cwd, exitCode: result.code, timedOut: result.timedOut, budgetReason, turns, productiveTurns, providerErrors, endedOnProviderError: lastStop === 'error', reportedCost: cost, reportedTokens: tokens, lastStop, deliveryStatus, errors, tools, durationMs: result.durationMs };
   if (args.task === 'cli') {
     const grade = await runCommand([python, join(root, 'tests', 'grade_cli.py'), cwd], { cwd, timeoutSeconds: 45, logPath: join(base, `${mode}-grade.log`) });
     summary.externalGrade = { code: grade.code, output: grade.output };
   } else {
-    const smoke = await runCommand([python, join(root, 'skills', 'game-development', 'scripts', 'verify_ursina.py'), 'minecraft.py', '--screenshot', 'artifacts/external-smoke.png'], { cwd, timeoutSeconds: 90, logPath: join(base, `${mode}-smoke.log`) });
-    summary.externalLaunch = { code: smoke.code === 0 && !smoke.output.includes('URSINA_PROBE_RESULT ') ? 1 : smoke.code, timedOut: smoke.timedOut, screenshotExists: existsSync(join(cwd, 'artifacts', 'external-smoke.png')), output: smoke.output };
-    summary.caveat = 'External probe requires real graphics startup and a nonblank framebuffer. Gameplay assertions are still candidate-written; this is not a full gameplay/visual score.';
+    const grade = await runCommand([python, join(root, 'tests', 'grade_game.py'), cwd, '--probe', join(root, 'skills', 'game-development', 'scripts', 'verify_ursina.py')], { cwd, timeoutSeconds: 120, logPath: join(base, `${mode}-grade.log`) });
+    summary.externalGrade = { code: grade.code, timedOut: grade.timedOut, output: grade.output };
+    summary.caveat = 'External game grade requires real graphics startup, a nonblank playable-world screenshot, runnable tests/docs, and machine-readable smoke evidence for movement, selection, break/place, pause and save/load. It is still a bounded smoke grade, not full human playtesting.';
   }
   summaries.push(summary);
   atomicJson(join(base, 'summary.json'), summaries);
   console.log(JSON.stringify(summary, null, 2));
 }
 console.log(`Evidence: ${join(base, 'summary.json')}`);
-if (summaries.some(s => s.exitCode !== 0 || s.endedOnProviderError && s.deliveryStatus !== 'verified' || s.mode === 'custom' && s.deliveryStatus !== 'verified' || s.timedOut || s.budgetReason || s.externalGrade?.code !== undefined && s.externalGrade.code !== 0 || s.externalLaunch?.code !== undefined && s.externalLaunch.code !== 0)) process.exitCode = 1;
+if (summaries.some(s => s.exitCode !== 0 || s.endedOnProviderError && s.deliveryStatus !== 'verified' || s.mode === 'custom' && s.deliveryStatus !== 'verified' || s.timedOut || s.budgetReason || s.externalGrade?.code !== undefined && s.externalGrade.code !== 0)) process.exitCode = 1;

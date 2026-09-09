@@ -124,6 +124,7 @@ These are workflow protections against mistakes, **not tamper-proof security**. 
 - `game-development` — import-safe game architecture, performance, real input smoke, screenshots, API-specific lessons. Explicit Ursina/Minecraft/voxel requests also receive the skill and starter recipe eagerly, so smaller models cannot miss them merely by skipping skill discovery. It now stages graphics first: adapt the starter, verify a nonblank real render, then extend gameplay.
 - `game-development/assets/ursina_starter.py` — a runnable, tested graphics/input slice to adapt, **not a finished game**. Its smoke asserts a nonblank framebuffer by sampling pixels (`assert_nonblank`): a saved PNG alone is not render evidence. The assertion is unit-tested to reject flat, black and missing images.
 - `game-development/scripts/verify_ursina.py` — independent real-renderer/nonblank-framebuffer probe. It reports framebuffer dimensions and sampled color counts, so a blank render cannot be rationalized as a headless-environment limitation.
+- `tests/grade_game.py` — external game acceptance grader. It requires the renderer probe plus README/tests, an import-safe launcher, a playable-world screenshot, a meaningful save file, `GAME_SMOKE_RESULT` evidence for movement, selection, break/place, pause and save/load, and an interactive window probe that independently sends `W`, `2`, `P`, and `S`.
 
 D2 source is always generated; D2 itself is optional for rendering. With D2 installed: `d2 path/to/plan.d2 artifacts/plan.svg`. This repository's workflow was rendered with D2 0.7.1. A local downloaded binary is under `.tools/` on this workstation, not required for package installation.
 
@@ -139,11 +140,13 @@ Run from the repository root. If pi is not found by the integration tests, set `
 
 ```sh
 node ./evaluate.mjs --allow-live --task cli --mode both
-node ./evaluate.mjs --allow-live --task game --mode both --timeout 600 --max-turns 100
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-game.txt
+xvfb-run -a node ./evaluate.mjs --allow-live --task game --mode both --timeout 600 --max-turns 100 --python .venv/bin/python
 ```
 
 Defaults: `openrouter/inception/mercury-2.5-preview`, the Mercury 2.5 model in this machine's catalog, with a 100-productive-turn cap. Override `--provider`, `--model`, `--python`, `--pi-cli`, `--timeout`, `--max-turns`, `--max-cost`. Existing pi authentication is used; no keys are copied into the repo.
 
-Each trial gets a new directory. Game trials begin from the included deliberately-defective baseline `default/minecraft.py` (a preserved original one-shot result, not an upgraded game) and require `--python` pointing at an interpreter with Ursina installed. Baseline disables project context, extensions and skills. Custom loads this package and a fixed required validator manifest outside its workspace. Both are scored with the same final external checks. **The custom condition receives validator feedback during development**; this measures oracle-assisted harness behavior, not an unassisted model benchmark. Earlier trials without that feedback are documented separately.
+Each trial gets a new directory. Game trials begin from the included deliberately-defective baseline `default/minecraft.py` (a preserved original one-shot result, not an upgraded game) and require `--python` pointing at an interpreter with Ursina and Pillow installed. The interactive Linux grade also requires a display plus `xdotool` and `scrot` (for example, run the evaluation under `xvfb-run`). Baseline disables project context, extensions and skills. Custom loads this package and a fixed required validator manifest outside its workspace. Both are scored with the same final external checks. **The custom condition receives validator feedback during development**; this measures oracle-assisted harness behavior, not an unassisted model benchmark. Earlier trials without that feedback are documented separately.
 
 Evidence includes event JSONL, tool counts, model turns, reported cost/tokens, deadlines, external scores and generated products. Recovered connection errors are logged without falsely marking a completed run as failed. One/few stochastic trials are not statistically sufficient to claim a general win.

@@ -118,6 +118,21 @@ test('bash timeout cap bounds runaway shell commands when configured', options, 
   const over = { toolName: 'powershell', input: { command: 'x', timeout: 9999 } };
   f.hooks.tool_call(over);
   assert.equal(over.input.timeout, 120);
+  for (const command of [
+    'pkill -f python',
+    'killall node',
+    'kill -9 -1',
+    'kill 0',
+    'taskkill /IM python.exe /F',
+    'Stop-Process -Name python',
+    'Get-Process | Stop-Process',
+  ]) {
+    const broadKill = { toolName: 'bash', input: { command } };
+    assert.match(f.hooks.tool_call(broadKill).reason, /Broad process termination/);
+  }
+  const targetedKill = { toolName: 'bash', input: { command: 'kill \"$child_pid\"' } };
+  assert.equal(f.hooks.tool_call(targetedKill), undefined);
+  assert.equal(targetedKill.input.timeout, 120);
   // Non-shell tools and blocked-write gating are untouched.
   const read = { toolName: 'read', input: { path: 'app.py' } };
   f.hooks.tool_call(read);
