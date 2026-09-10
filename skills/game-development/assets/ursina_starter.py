@@ -39,15 +39,31 @@ def main():
                  size=(960, 600), development_mode=False, editor_ui_enabled=False)
     # Offscreen GraphicsBuffer has no requestProperties(): do not set mouse.locked.
     if not args.smoke:
+        from ursina.prefabs.first_person_controller import FirstPersonController
         window.fullscreen = False
-        mouse.locked = False
+        mouse.locked = True
     aspect = app.win.getXSize() / app.win.getYSize()
     camera.ui_lens.set_film_size(camera.ui_size * .5 * aspect, camera.ui_size * .5)
     camera.perspective_lens.set_aspect_ratio(aspect)
     window.color = color.rgb32(174, 207, 220)
-    camera.position = (5, 5, -8)
-    camera.look_at((0, 0, 0))
-    Entity(model='cube', scale=(12, 1, 12), y=-1, color=color.rgb32(93, 141, 73))
+    ground = Entity(
+        model='cube',
+        scale=(12, 1, 12),
+        y=-1,
+        collider='box',
+        color=color.rgb32(93, 141, 73),
+    )
+    Entity(
+        model='cube',
+        position=(0, 1, 2),
+        collider='box',
+        color=color.rgb32(178, 124, 76),
+    )
+    if args.smoke:
+        camera.position = (5, 5, -8)
+        camera.look_at((0, 0, 0))
+    else:
+        FirstPersonController(position=(0, 1, -4), speed=5, gravity=.5, jump_height=1.5)
 
     class Slice(Entity):
         def __init__(self):

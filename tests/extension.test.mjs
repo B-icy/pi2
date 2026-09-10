@@ -38,6 +38,8 @@ function fixture(t) {
 test('real extension loads, gates writes, executes checks and rejects stale evidence', options, async t => {
   const f = fixture(t);
   assert.equal(f.hooks.tool_call({ toolName: 'write' }).block, true);
+  assert.equal(f.hooks.tool_call({ toolName: 'bash', input: { command: 'mkdir artifacts' } }, f.ctx).block, true);
+  assert.equal(f.hooks.tool_call({ toolName: 'bash', input: { command: 'ls -la' } }, f.ctx), undefined);
   await f.call('delivery_plan', f.plan);
   assert.equal(f.hooks.tool_call({ toolName: 'write' }), undefined);
   const finish = { status: 'verified', review: 'Reviewed executable behavior.', launch: 'python app.py', limitations: [] };
@@ -124,17 +126,131 @@ test('bash timeout cap bounds runaway shell commands when configured', options, 
   assert.equal(read.input.timeout, undefined);
   assert.equal(f.hooks.tool_call({ toolName: 'write' }).block, true);
 });
-test('Ursina requests get the verified recipe even when skill discovery is skipped', options, t => {
+test('edit calls normalize a JSON-encoded edits array', options, async t => {
   const f = fixture(t);
-  const context = f.hooks.before_agent_start({ systemPrompt: 'base', prompt: 'Build a Minecraft voxel game' });
-  assert.match(context.systemPrompt, /camera.ui_lens.set_film_size/);
-  assert.match(context.systemPrompt, /verify_ursina.py/);
-  // Game prompts carry the scope lesson: renderer-only contracts do not verify a game.
-  assert.match(context.systemPrompt, /renderer-only contract does not verify a game/);
-  const ordinary = f.hooks.before_agent_start({ systemPrompt: 'base', prompt: 'What is 2 + 2?' });
-  assert.doesNotMatch(ordinary.systemPrompt, /camera.ui_lens.set_film_size/);
-  // Ordinary prompts still receive the always-on scope-reconciliation guidance.
-  assert.match(ordinary.systemPrompt, /Scope honestly: enumerate every explicit requirement/);
+  await f.call('delivery_plan', f.plan);
+  const event = {
+    toolName: 'edit',
+    input: {
+      path: 'app.py',
+      edits: JSON.stringify([{ oldText: 'print(1)', newText: 'print(2)' }]),
+    },
+  };
+  assert.equal(f.hooks.tool_call(event, f.ctx), undefined);
+  assert.deepEqual(event.input.edits, [{ oldText: 'print(1)', newText: 'print(2)' }]);
+});
+test('bash cap blocks process-wide termination but allows targeted child cleanup', options, t => {
+  const f = fixture(t);
+  f.flags['delivery-bash-cap'] = 120;
+  for (const command of [
+    'pkill -f python',
+    'killall node',
+    'kill -9 -1',
+    'kill 0',
+    'taskkill /IM python.exe /F',
+    'Stop-Process -Name python',
+    'Get-Process | Stop-Process',
+  ]) {
+    const broadKill = { toolName: 'bash', input: { command } };
+    assert.match(
+      f.hooks.tool_call(broadKill).reason,
+      /Broad process termination/
+    );
+  }
+
+  const targetedKill = {
+    toolName: 'bash',
+    input: { command: 'kill "$child_pid"' }
+  };
+  assert.equal(f.hooks.tool_call(targetedKill), undefined);
+  assert.equal(targetedKill.input.timeout, 120);
+});
+test('bounded runs cap whole-file rewrites per path and pace tool loops', options, async t => {
+  const f = fixture(t);
+  f.flags['delivery-strict'] = false;
+  f.flags['delivery-rewrite-cap'] = 2;
+  const write = path => f.hooks.tool_call({ toolName: 'write', input: { path } }, f.ctx);
+  f.flags['delivery-protect-existing'] = true;
+  f.hooks.session_start({}, f.ctx);
+  assert.match(write('app.py').reason, /Preserve the existing app.py implementation/);
+  assert.equal(f.hooks.tool_call({ toolName: 'edit', input: { path: 'app.py' } }, f.ctx), undefined);
+  assert.match(
+    f.hooks.tool_call(
+      { toolName: 'bash', input: { command: `cat > "${join(f.cwd, 'app.py')}" <<'EOF'\nprint(2)\nEOF` } },
+      f.ctx,
+    ).reason,
+    /Shell redirection cannot replace/,
+  );
+  assert.match(
+    f.hooks.tool_call(
+      { toolName: 'bash', input: { command: "python - <<'PY'\nwith open('app.py', 'w') as f:\n f.write('print(2)')\nPY" } },
+      f.ctx,
+    ).reason,
+    /script cannot replace/,
+  );
+  assert.match(
+    f.hooks.tool_call(
+      { toolName: 'bash', input: { command: `mv /tmp/replacement.py "${join(f.cwd, 'app.py')}"` } },
+      f.ctx,
+    ).reason,
+    /cannot remove or replace/,
+  );
+  f.flags['delivery-protect-existing'] = false;
+  f.hooks.session_start({}, f.ctx);
+  assert.equal(write('app.py'), undefined);
+  assert.equal(write('app.py'), undefined);
+  assert.match(write('app.py').reason, /Full-file rewrite limit reached/);
+  assert.equal(write('README.md'), undefined);
+  assert.equal(f.hooks.tool_call({ toolName: 'edit', input: { path: 'app.py' } }), undefined);
+  assert.match(
+    f.hooks.tool_call(
+      { toolName: 'write', input: { path: f.cwd.replace(/^\/+/, '') + '/nested.py' } },
+      f.ctx,
+    ).reason,
+    /recreates the working directory/,
+  );
+  assert.match(
+    f.hooks.tool_call(
+      { toolName: 'write', input: { path: `${f.cwd.split('/').at(-1)}/nested.py` } },
+      f.ctx,
+    ).reason,
+    /recreates the working directory/,
+  );
+
+  f.flags['delivery-turn-delay-ms'] = 20;
+  const started = Date.now();
+  await f.hooks.tool_result({ toolName: 'read', isError: false });
+  assert.ok(Date.now() - started >= 15);
+
+  f.flags['delivery-turn-delay-ms'] = 10;
+  const scaled = Date.now();
+  await f.hooks.tool_result(
+    { toolName: 'read', isError: false },
+    { getContextUsage: () => ({ tokens: 100001 }) },
+  );
+  assert.ok(Date.now() - scaled >= 25);
+
+  f.flags['delivery-turn-delay-ms'] = 0;
+  f.flags['delivery-tool-output-cap'] = 100;
+  const bounded = await f.hooks.tool_result({
+    toolName: 'bash',
+    isError: false,
+    content: [{ type: 'text', text: `${'head'.repeat(30)}${'tail'.repeat(30)}` }],
+  });
+  assert.equal(bounded.content[0].text.length, 100);
+  assert.match(bounded.content[0].text, /characters omitted/);
+  assert.match(bounded.content[0].text, /^head/);
+  assert.match(bounded.content[0].text, /tail$/);
+});
+test('optional delivery context is explicit and task agnostic', options, t => {
+  const f = fixture(t);
+  writeFileSync(join(f.cwd, 'quality-context.md'), 'Require evidence from the public user path.');
+  f.flags['delivery-context'] = 'quality-context.md';
+  f.hooks.session_start({}, f.ctx);
+  const context = f.hooks.before_agent_start({ systemPrompt: 'base', prompt: 'Build a voxel game' });
+  assert.match(context.systemPrompt, /Require evidence from the public user path/);
+  assert.doesNotMatch(context.systemPrompt, /camera.ui_lens.set_film_size/);
+  assert.match(context.systemPrompt, /Scope honestly: enumerate every explicit requirement/);
 });
 test('required validators cannot be omitted or replaced by model plans', options, async t => {
   const f = fixture(t);
